@@ -6,16 +6,8 @@
   node_bundler = "esbuild"
 
 [[edge_functions]]
-  function = "session-gate"
-  path = "/index.html"
-
-[[edge_functions]]
-  function = "session-gate"
-  path = "/pipeline"
-
-[[edge_functions]]
-  function = "session-gate"
-  path = "/dashboard"
+  function = "auth-guard"
+  path = "/*"
 
 [[redirects]]
   from = "/"
