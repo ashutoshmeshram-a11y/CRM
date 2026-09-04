@@ -1,0 +1,9 @@
+{
+  "name": "lead-funnel-board",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^10.3.1"
+  }
+}
