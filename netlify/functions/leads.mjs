@@ -1,47 +1,5 @@
 import { getStore } from '@netlify/blobs';
-
-const STORE_NAME = 'crm-leads';
-const KEY = 'leads';
-
-function response(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store, no-cache, must-revalidate',
-    },
-  });
-}
-
-export default async function handler(request) {
-  try {
-    const store = getStore(STORE_NAME, { consistency: 'strong' });
-
-    if (request.method === 'GET') {
-      const leads = (await store.get(KEY, { type: 'json' })) ?? [];
-      return response({ leads: Array.isArray(leads) ? leads : [] });
-    }
-
-    if (request.method === 'PUT') {
-      const payload = await request.json();
-      if (!payload || !Array.isArray(payload.leads)) {
-        return response({ error: 'leads must be an array' }, 400);
-      }
-      await store.setJSON(KEY, payload.leads);
-      return response({ leads: payload.leads, saved: true });
-    }
-
-    if (request.method === 'DELETE') {
-      await store.delete(KEY);
-      return response({ leads: [], saved: true });
-    }
-
-    return response({ error: 'Method not allowed' }, 405);
-  } catch (error) {
-    console.error('CRM storage error:', error);
-    return response({
-      error: 'Unable to access persistent lead storage',
-      detail: error instanceof Error ? error.message : String(error),
-    }, 500);
-  }
-}
+import { authenticate } from './auth.mjs';
+const STORE_NAME='crm-leads',KEY='leads';
+const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+export default async function handler(request){try{const user=await authenticate(request);if(!user)return response({error:'Authentication required'},401);const store=getStore(STORE_NAME,{consistency:'strong'});if(request.method==='GET'){let leads=(await store.get(KEY,{type:'json'}))??[];leads=Array.isArray(leads)?leads:[];if(user.role==='coach')leads=leads.filter(l=>l.ownerId===user.id||!l.ownerId);return response({leads});}if(request.method==='PUT'){const payload=await request.json();if(!payload||!Array.isArray(payload.leads))return response({error:'leads must be an array'},400);let all=(await store.get(KEY,{type:'json'}))??[];all=Array.isArray(all)?all:[];if(user.role==='admin'){await store.setJSON(KEY,payload.leads);}else{const own=payload.leads.map(l=>({...l,ownerId:l.ownerId||user.id}));const ids=new Set(own.map(l=>l.id));const merged=[...all.filter(l=>l.ownerId&&l.ownerId!==user.id&&!ids.has(l.id)),...own];await store.setJSON(KEY,merged);}return response({leads:payload.leads,saved:true});}if(request.method==='DELETE'){if(user.role!=='admin')return response({error:'Admin access required'},403);await store.delete(KEY);return response({leads:[],saved:true});}return response({error:'Method not allowed'},405);}catch(error){console.error(error);return response({error:'Unable to access persistent lead storage'},500);}}
