@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Funnel Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#21231F;
+    --ink-soft:#565A4E;
+    --paper:#EDEFEA;
+    --card:#FFFFFF;
+    --line:#D8DAD2;
+    --line-strong:#B9BCAF;
+    --good:#4B6B4F;
+    --bad:#A6432E;
+
+    --s1:#EFE3CB;
+    --s2:#E1CB9E;
+    --s3:#CDAC6C;
+    --s4:#B58C42;
+    --s5:#93672A;
+    --s6:#6C4519;
+
+    --s1-ink:#4A3F1F;
+    --s2-ink:#40350F;
+    --s3-ink:#332705;
+    --s4-ink:#2B1F04;
+    --s5-ink:#F3E7D2;
+    --s6-ink:#F3E7D2;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+
+  .wrap{
+    max-width:1400px;
+    margin:0 auto;
+    padding:32px 28px 60px;
+  }
+
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+    line-height:1.05;
+  }
+
+  .sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    max-width:56ch;
+    margin:0;
+  }
+
+  .add-btn{
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    font-weight:500;
+    padding:12px 20px;
+    border-radius:3px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .add-btn:hover{background:#3A3D33;}
+  .add-btn:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--s4);
+    outline-offset:2px;
+  }
+
+  .board{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:270px;
+    gap:14px;
+    overflow-x:auto;
+    padding-bottom:12px;
+  }
+
+  .col{
+    background:transparent;
+    display:flex;
+    flex-direction:column;
+    min-height:200px;
+  }
+
+  .col-head{
+    border-radius:4px 4px 0 0;
+    padding:12px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .col-head .stage-line{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+  }
+
+  .col-num{
+    font-family:'Fraunces', serif;
+    font-size:13px;
+    font-weight:600;
+    opacity:0.7;
+  }
+
+  .col-title{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:600;
+    line-height:1.15;
+  }
+
+  .col-count{
+    font-size:12px;
+    font-weight:500;
+    background:rgba(255,255,255,0.45);
+    border-radius:10px;
+    padding:2px 8px;
+    align-self:flex-start;
+  }
+
+  .col-body{
+    background:#E4E5DE;
+    border:1px solid var(--line);
+    border-top:none;
+    border-radius:0 0 4px 4px;
+    flex:1;
+    min-height:120px;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    transition:background 0.15s ease;
+  }
+
+  .col-body.drag-over{
+    background:#D9DBCE;
+  }
+
+  .empty-hint{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    text-align:center;
+    padding:18px 6px;
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:11px 12px 9px;
+    cursor:grab;
+  }
+  .card:active{cursor:grabbing;}
+  .card.dragging{opacity:0.4;}
+
+  .card-name{
+    font-weight:600;
+    font-size:14.5px;
+    margin:0 0 3px 0;
+    line-height:1.25;
+  }
+
+  .card-meta{
+    color:var(--ink-soft);
+    font-size:12px;
+    line-height:1.5;
+    word-break:break-word;
+  }
+
+  .card-notes{
+    font-size:12.5px;
+    color:var(--ink);
+    margin-top:6px;
+    padding-top:6px;
+    border-top:1px solid var(--line);
+    line-height:1.4;
+  }
+
+  .card-date{
+    font-size:11px;
+    color:var(--line-strong);
+    margin-top:6px;
+  }
+
+  .card-actions{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:8px;
+  }
+
+  .move-btns{
+    display:flex;
+    gap:4px;
+  }
+
+  .icon-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    font-size:12px;
+    line-height:1;
+    padding:4px 7px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .icon-btn:hover{border-color:var(--line-strong); color:var(--ink);}
+  .icon-btn:disabled{opacity:0.3; cursor:not-allowed;}
+
+  .del-btn{
+    background:none;
+    border:none;
+    color:var(--bad);
+    font-size:12px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+    padding:4px 6px;
+  }
+  .del-btn:hover{text-decoration:underline;}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(33,35,31,0.45);
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding:8vh 16px;
+    z-index:50;
+  }
+  .overlay.open{display:flex;}
+
+  .modal{
+    background:var(--card);
+    border-radius:6px;
+    width:100%;
+    max-width:420px;
+    padding:26px 26px 22px;
+    box-shadow:0 12px 40px rgba(33,35,31,0.25);
+  }
+
+  .modal h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:22px;
+    margin:0 0 4px 0;
+  }
+  .modal .modal-sub{
+    color:var(--ink-soft);
+    font-size:13px;
+    margin:0 0 18px 0;
+  }
+
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:500;
+    margin-bottom:5px;
+    color:var(--ink);
+  }
+  .field input, .field textarea{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    padding:9px 10px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:#FBFBF9;
+  }
+  .field textarea{resize:vertical; min-height:56px;}
+
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:18px;
+  }
+
+  .btn-secondary{
+    background:none;
+    border:1px solid var(--line-strong);
+    color:var(--ink);
+    padding:9px 16px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+  }
+  .btn-primary{
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:9px 16px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    font-weight:500;
+  }
+  .btn-primary:hover{background:#3A3D33;}
+
+  .error-text{
+    color:var(--bad);
+    font-size:12px;
+    margin-top:4px;
+  }
+
+  footer.bottom{
+    margin-top:22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .status-text{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .reset-btn{
+    background:none;
+    border:none;
+    color:var(--bad);
+    font-size:12.5px;
+    cursor:pointer;
+    text-decoration:underline;
+    font-family:'IBM Plex Sans', sans-serif;
+    padding:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Lead Funnel Board</h1>
+      <p class="sub">Every lead starts with the 5-Day Reset Challenge form and moves right as they commit deeper &mdash; through the Workshop, UHP, RTM, Master, and Master Legacy.</p>
+    </div>
+    <button class="add-btn" id="openAdd" type="button">Add lead</button>
+  </header>
+
+  <div class="board" id="board"></div>
+
+  <footer class="bottom">
+    <span class="status-text" id="statusText">Loading board&hellip;</span>
+    <button class="reset-btn" id="resetBtn" type="button">Clear all leads</button>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Add a lead</h2>
+    <p class="modal-sub">New leads are placed at the start of the funnel: 5-Day Reset Challenge Form.</p>
+    <form id="leadForm">
+      <div class="field">
+        <label for="fName">Name</label>
+        <input type="text" id="fName" autocomplete="off">
+        <div class="error-text" id="nameError" style="display:none;">Enter a name to continue.</div>
+      </div>
+      <div class="field">
+        <label for="fContact">Email or phone</label>
+        <input type="text" id="fContact" autocomplete="off" placeholder="e.g. priya@email.com or +91 98xxxxxxx">
+      </div>
+      <div class="field">
+        <label for="fNotes">Notes</label>
+        <textarea id="fNotes" placeholder="Payment status, source, follow-up notes&hellip;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelAdd">Cancel</button>
+        <button type="submit" class="btn-primary">Add lead</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const STAGES = [
+  { name: "5-Day Reset Challenge Form", short: "Reset Challenge" },
+  { name: "2-Day Workshop", short: "Workshop" },
+  { name: "2-Month UHP", short: "UHP" },
+  { name: "3-Month RTM", short: "RTM" },
+  { name: "3-Month Master", short: "Master" },
+  { name: "4-Month Master Legacy", short: "Master Legacy" }
+];
+
+const STORAGE_KEY = "leads";
+let leads = [];
+let draggedId = null;
+
+const board = document.getElementById("board");
+const statusText = document.getElementById("statusText");
+const overlay = document.getElementById("overlay");
+const leadForm = document.getElementById("leadForm");
+const nameInput = document.getElementById("fName");
+const nameError = document.getElementById("nameError");
+
+function uid(){
+  return 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function formatDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function loadLeads(){
+  try{
+    if (!window.storage) throw new Error("storage unavailable");
+    const result = await window.storage.get(STORAGE_KEY, false);
+    leads = result && result.value ? JSON.parse(result.value) : [];
+    statusText.textContent = leads.length + (leads.length === 1 ? " lead on the board." : " leads on the board.");
+  }catch(err){
+    leads = [];
+    statusText.textContent = "Starting a fresh board.";
+  }
+}
+
+async function saveLeads(){
+  try{
+    if (!window.storage) throw new Error("storage unavailable");
+    await window.storage.set(STORAGE_KEY, JSON.stringify(leads), false);
+    statusText.textContent = leads.length + (leads.length === 1 ? " lead on the board." : " leads on the board.");
+  }catch(err){
+    statusText.textContent = leads.length + (leads.length === 1 ? " lead on the board (not saved)." : " leads on the board (not saved).");
+  }
+}
+
+function render(){
+  board.innerHTML = "";
+  STAGES.forEach((stage, idx) => {
+    const col = document.createElement("div");
+    col.className = "col";
+
+    const head = document.createElement("div");
+    head.className = "col-head";
+    head.style.background = `var(--s${idx+1})`;
+    head.style.color = `var(--s${idx+1}-ink)`;
+
+    const stageLeads = leads.filter(l => l.stage === idx);
+
+    head.innerHTML = `
+      <div class="stage-line">
+        <span class="col-num">Stage ${idx+1}</span>
+        <span class="col-count">${stageLeads.length}</span>
+      </div>
+      <span class="col-title">${stage.name}</span>
+    `;
+    col.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "col-body";
+    body.dataset.stage = idx;
+
+    body.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      body.classList.add("drag-over");
+    });
+    body.addEventListener("dragleave", () => body.classList.remove("drag-over"));
+    body.addEventListener("drop", (e) => {
+      e.preventDefault();
+      body.classList.remove("drag-over");
+      if (draggedId) moveLead(draggedId, idx);
+    });
+
+    if (stageLeads.length === 0){
+      const hint = document.createElement("div");
+      hint.className = "empty-hint";
+      hint.textContent = idx === 0 ? "New leads land here." : "No leads at this stage yet.";
+      body.appendChild(hint);
+    }
+
+    stageLeads.forEach(lead => {
+      body.appendChild(renderCard(lead, idx));
+    });
+
+    col.appendChild(body);
+    board.appendChild(col);
+  });
+}
+
+function renderCard(lead, idx){
+  const card = document.createElement("div");
+  card.className = "card";
+  card.draggable = true;
+  card.dataset.id = lead.id;
+
+  card.addEventListener("dragstart", () => {
+    draggedId = lead.id;
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    draggedId = null;
+  });
+
+  const nameEl = document.createElement("p");
+  nameEl.className = "card-name";
+  nameEl.textContent = lead.name;
+  card.appendChild(nameEl);
+
+  if (lead.contact){
+    const metaEl = document.createElement("p");
+    metaEl.className = "card-meta";
+    metaEl.textContent = lead.contact;
+    card.appendChild(metaEl);
+  }
+
+  if (lead.notes){
+    const notesEl = document.createElement("p");
+    notesEl.className = "card-notes";
+    notesEl.textContent = lead.notes;
+    card.appendChild(notesEl);
+  }
+
+  const dateEl = document.createElement("p");
+  dateEl.className = "card-date";
+  dateEl.textContent = "Added " + formatDate(lead.dateAdded);
+  card.appendChild(dateEl);
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+
+  const moveBtns = document.createElement("div");
+  moveBtns.className = "move-btns";
+
+  const backBtn = document.createElement("button");
+  backBtn.className = "icon-btn";
+  backBtn.type = "button";
+  backBtn.textContent = "\u2190";
+  backBtn.title = "Move to previous stage";
+  backBtn.disabled = idx === 0;
+  backBtn.addEventListener("click", () => moveLead(lead.id, idx - 1));
+
+  const fwdBtn = document.createElement("button");
+  fwdBtn.className = "icon-btn";
+  fwdBtn.type = "button";
+  fwdBtn.textContent = "\u2192";
+  fwdBtn.title = "Move to next stage";
+  fwdBtn.disabled = idx === STAGES.length - 1;
+  fwdBtn.addEventListener("click", () => moveLead(lead.id, idx + 1));
+
+  moveBtns.appendChild(backBtn);
+  moveBtns.appendChild(fwdBtn);
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "del-btn";
+  delBtn.type = "button";
+  delBtn.textContent = "Remove";
+  delBtn.addEventListener("click", () => deleteLead(lead.id));
+
+  actions.appendChild(moveBtns);
+  actions.appendChild(delBtn);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function moveLead(id, newStage){
+  if (newStage < 0 || newStage > STAGES.length - 1) return;
+  const lead = leads.find(l => l.id === id);
+  if (!lead || lead.stage === newStage) return;
+  lead.stage = newStage;
+  render();
+  saveLeads();
+}
+
+function deleteLead(id){
+  leads = leads.filter(l => l.id !== id);
+  render();
+  saveLeads();
+}
+
+function addLead(name, contact, notes){
+  leads.push({
+    id: uid(),
+    name: name.trim(),
+    contact: contact.trim(),
+    notes: notes.trim(),
+    stage: 0,
+    dateAdded: new Date().toISOString()
+  });
+  render();
+  saveLeads();
+}
+
+function closeModal(){
+  overlay.classList.remove("open");
+}
+
+function wireUpInteractions(){
+  document.getElementById("openAdd").addEventListener("click", () => {
+    overlay.classList.add("open");
+    nameError.style.display = "none";
+    leadForm.reset();
+    nameInput.focus();
+  });
+  document.getElementById("cancelAdd").addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay.classList.contains("open")) closeModal(); });
+
+  leadForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    if (!name){
+      nameError.style.display = "block";
+      nameInput.focus();
+      return;
+    }
+    addLead(name, document.getElementById("fContact").value, document.getElementById("fNotes").value);
+    closeModal();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if (leads.length === 0) return;
+    if (confirm("Remove all leads from the board? This can't be undone.")){
+      leads = [];
+      render();
+      saveLeads();
+    }
+  });
+}
+
+// Init: load any saved leads FIRST, render, THEN allow interaction.
+// This ordering prevents a late-resolving load from overwriting a lead
+// the user added while the board was still loading.
+async function init(){
+  document.getElementById("openAdd").disabled = true;
+  await loadLeads();
+  render();
+  document.getElementById("openAdd").disabled = false;
+  wireUpInteractions();
+}
+
+init();
+</script>
+</body>
+</html>
